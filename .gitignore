@@ -131,3 +131,4 @@ dmypy.json
 
 notebooks/tmp
 
+notebooks/output/country_naming/
