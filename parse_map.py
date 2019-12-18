@@ -1,8 +1,14 @@
 import argparse
 import matplotlib.pyplot as plt
 from shapely import geometry
-from map_extractor import preprocessing, shape_extraction
+from map_extractor import preprocessing, shape_extraction, country_naming
 import skimage.color
+from map_extractor.PolygonGroup import PolygonGroup
+import json
+import numpy as np
+
+import cv2
+
 
 def display_img(img, title="", big=False) : 
     if big : 
@@ -37,9 +43,40 @@ def main() :
         image = preprocessing.remove_ignored_areas(image, parse_ignored_boxes(args.ignored_boxes))
     print('Clustering image colors..')
     image_clustered = preprocessing.regroup_image_colors(image, args.nb_colors)
-    shapes = shape_extraction.extract_shapes(image_clustered)
-    for shape in shapes :
-        shape.display()
+    # image_clustered = skimage.color.rgba2rgb(plt.imread('notebooks/tmp/clustered_europe.png'))
+    
+    polygon_groups = shape_extraction.extract_shapes(image_clustered)
+    
+    # for i, shape in enumerate(shapes) :
+    #     with open('/tmp/shape_'+str(i)+'.json', 'w') as f :
+    #         dict_shape = shape.to_dict()
+    #         json_rep = json.dumps(dict_shape) 
+    #         f.write(json_rep)
+
+    # for i in range(16) : 
+    #     with open('/tmp/shape_'+str(i)+'.json', 'r') as f :
+    #         jsonrep = f.read()
+    #         a = PolygonGroup.from_dict(json.loads(jsonrep))
+    #         polygon_groups.append(a)
+    # img = skimage.color.rgba2rgb(plt.imread('notebooks/tmp/europe_cleaned.png'))
+    
+    pg_group_named = []
+    print('Performing OCR with Tesseract ...')
+    ocr_results = country_naming.apply_tesseract(image)
+    print('Extracting OCR results..')
+    for group in polygon_groups:
+        pg_group_named = np.concatenate((pg_group_named, country_naming.label_polygon_group(ocr_results, group)))
+    print('Done')
+
+def disp_ocr_results(img, ocr_results) :
+    todisp = img.copy()
+    disp_color = (int(np.max(img)) , 0, 0)
+    for i, row in ocr_results.iterrows():
+        (minx, miny, maxx, maxy) = np.array(row['bbox'].bounds).astype(int)
+        cv2.rectangle(todisp, (minx, miny), (maxx, maxy),disp_color , 2)
+        cv2.putText(todisp,row['text'], (maxx+3,maxy), cv2.FONT_HERSHEY_SIMPLEX, 1, disp_color, 2)
+    display_img(todisp, '', True)
+    
 if __name__ == "__main__" :
     main()
 

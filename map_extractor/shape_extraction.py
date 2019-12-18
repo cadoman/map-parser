@@ -9,27 +9,6 @@ from shapely.geometry import Polygon
 import cv2
 from tqdm import tqdm
 
-def disp_polygons(img, polygons, saveTo='') :
-    todisp = img.copy()
-    for polygon in polygons :
-        (minx, miny, maxx, maxy) = np.array(polygon.bounds).astype(int)
-        cv2.rectangle(todisp, (minx, miny), (maxx, maxy), (0, 0, int(np.max(todisp))), 2)
-    plt.imshow(todisp)
-    plt.show()
-
-def print_colors(extracted_colors):
-    toplot = extracted_colors[:25]
-    percentage = 100 * len(toplot)/len(extracted_colors)
-    plt.figure(figsize=(18, 16), dpi= 80, facecolor='w', edgecolor='k')
-    plt.bar(np.arange(len(toplot)) , toplot['count'].values , color=toplot['color'].values)
-    plt.title('Major colours found in map ('+str(percentage)+'% of colours represented)')
-    plt.show()
-
-def display_colours(color_list) :
-    size = len(color_list)
-    plt.bar(range(size), [1]*size  , color=color_list)
-    plt.show()
-
 def extract_shapes(image:np.ndarray) :
     '''
     Extract the land shapes visible on the map (previously clustered)
@@ -47,7 +26,6 @@ def extract_shapes(image:np.ndarray) :
     print('Extracting masks...')
 
     masks = get_masks(image, land_colors[:])
-    print('len masks', len(masks))
 
     print('Detecting polygons')
     polygon_groups = []
